@@ -32,4 +32,5 @@ public class SMSAuthenticatorContstants {
     public static final String AUTH_METHOD_BASIC = "Basic authentication";
     public static final String AUTH_METHOD_INMESSAGE = "In message authentication";
 
+    public static final String MOCK = "MOCK";
 }

@@ -1,8 +1,9 @@
 package com.alliander.keycloak.authenticator;
 
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 
 import java.util.List;
@@ -25,15 +26,18 @@ public class SMSAuthenticatorUtil {
     }
 
 
-    public static String getCredentialValue(UserModel user, String credentialName) {
+    public static String getCredentialValue(AuthenticationFlowContext context, String credentialName) {
         String result = null;
-        List<UserCredentialValueModel> creds = user.getCredentialsDirectly();
-        for (UserCredentialValueModel cred : creds) {
-            if(cred.getType().equals(credentialName)) {
-                result = cred.getValue();
-            }
-        }
 
+        List codeCreds = context.getSession().userCredentialManager().getStoredCredentialsByType(context.getRealm(), context.getUser(), credentialName);
+
+        CredentialModel expectedCode = (CredentialModel) codeCreds.get(0);
+        logger.debug("Expected code = " + expectedCode);
+
+        if (expectedCode != null) {
+            result = expectedCode.getValue();
+        }
+        logger.debug("result : " + result);
         return result;
     }
 
@@ -73,4 +77,26 @@ public class SMSAuthenticatorUtil {
 
         return value;
     }
+
+    public static boolean getBooleanConfig(AuthenticatorConfigModel config, String configName) {
+        return getBooleanConfig(config, configName, false);
+    }
+
+    public static boolean getBooleanConfig(AuthenticatorConfigModel config, String configName, boolean defaultValue) {
+
+        boolean value = defaultValue;
+
+        if (config.getConfig() != null) {
+            // Get value
+            Object obj = config.getConfig().get(configName);
+            try {
+                value = Boolean.valueOf((String) obj); // s --> ms
+            } catch (NumberFormatException nfe) {
+                logger.error("Can not convert " + obj + " to a boolean.");
+            }
+        }
+        return value;
+    }
+
+
 }

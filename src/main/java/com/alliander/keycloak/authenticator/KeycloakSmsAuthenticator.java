@@ -144,11 +144,11 @@ public class KeycloakSmsAuthenticator implements Authenticator {
         UserCredentialModel credentials = new UserCredentialModel();
         credentials.setType(SMSAuthenticatorContstants.USR_CRED_MDL_SMS_CODE);
         credentials.setValue(code);
-        context.getSession().users().updateCredential(context.getRealm(), context.getUser(), credentials);
+        context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), credentials);
 
         credentials.setType(SMSAuthenticatorContstants.USR_CRED_MDL_SMS_EXP_TIME);
         credentials.setValue((expiringAt).toString());
-        context.getSession().users().updateCredential(context.getRealm(), context.getUser(), credentials);
+        context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), credentials);
     }
 
 
@@ -159,8 +159,8 @@ public class KeycloakSmsAuthenticator implements Authenticator {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         String enteredCode = formData.getFirst(SMSAuthenticatorContstants.ANSW_SMS_CODE);
 
-        String expectedCode = SMSAuthenticatorUtil.getCredentialValue(context.getUser(), SMSAuthenticatorContstants.USR_CRED_MDL_SMS_CODE);
-        String expTimeString = SMSAuthenticatorUtil.getCredentialValue(context.getUser(), SMSAuthenticatorContstants.USR_CRED_MDL_SMS_EXP_TIME);
+        String expectedCode = SMSAuthenticatorUtil.getCredentialValue(context, SMSAuthenticatorContstants.USR_CRED_MDL_SMS_CODE);
+        String expTimeString = SMSAuthenticatorUtil.getCredentialValue(context, SMSAuthenticatorContstants.USR_CRED_MDL_SMS_EXP_TIME);
 
         logger.debug("Expected code = " + expectedCode + "    entered code = " + enteredCode);
 
@@ -216,102 +216,106 @@ public class KeycloakSmsAuthenticator implements Authenticator {
         // Send an SMS
         logger.debug("Sending " + code + "  to mobileNumber " + mobileNumber);
 
-        String smsUrl = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_SMS_URL);
-        String smsUsr = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_SMS_USERNAME);
-        String smsPwd = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_SMS_PASSWORD);
+        boolean isMock = SMSAuthenticatorUtil.getBooleanConfig(config, SMSAuthenticatorContstants.MOCK);
+        if (!isMock){
+            String smsUrl = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_SMS_URL);
+            String smsUsr = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_SMS_USERNAME);
+            String smsPwd = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_SMS_PASSWORD);
 
-        String proxyUrl = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_PROXY_URL);
-        String proxyUsr = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_PROXY_USERNAME);
-        String proxyPwd = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_PROXY_PASSWORD);
-        String contentType = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_CONTENT_TYPE);
+            String proxyUrl = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_PROXY_URL);
+            String proxyUsr = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_PROXY_USERNAME);
+            String proxyPwd = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_PROXY_PASSWORD);
+            String contentType = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_CONTENT_TYPE);
 
-        CloseableHttpClient httpClient = null;
-        try {
-            URL smsURL = (smsUrl != null && smsUrl.length() > 0) ? new URL(smsUrl) : null;
-            URL proxyURL = (proxyUrl != null && proxyUrl.length() > 0) ? new URL(proxyUrl) : null;
+            CloseableHttpClient httpClient = null;
+            try {
+                URL smsURL = (smsUrl != null && smsUrl.length() > 0) ? new URL(smsUrl) : null;
+                URL proxyURL = (proxyUrl != null && proxyUrl.length() > 0) ? new URL(proxyUrl) : null;
 
-            if(smsURL == null) {
-                logger.error("SMS gateway URL is not configured.");
-                return false;
-            }
+                if (smsURL == null) {
+                    logger.error("SMS gateway URL is not configured.");
+                    return false;
+                }
 
 
-            CredentialsProvider credsProvider;
-            if(SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_SMS_AUTHTYPE, "").equals(SMSAuthenticatorContstants.AUTH_METHOD_INMESSAGE)) {
-                credsProvider = getCredentialsProvider(null, null, proxyUsr, proxyPwd, smsURL, proxyURL);
-            } else {
-                credsProvider = getCredentialsProvider(smsUsr, smsPwd, proxyUsr, proxyPwd, smsURL, proxyURL);
-            }
+                CredentialsProvider credsProvider;
+                if (SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_SMS_AUTHTYPE, "").equals(SMSAuthenticatorContstants.AUTH_METHOD_INMESSAGE)) {
+                    credsProvider = getCredentialsProvider(null, null, proxyUsr, proxyPwd, smsURL, proxyURL);
+                } else {
+                    credsProvider = getCredentialsProvider(smsUsr, smsPwd, proxyUsr, proxyPwd, smsURL, proxyURL);
+                }
 
-            HttpHost target = new HttpHost(smsURL.getHost(), smsURL.getPort(), smsURL.getProtocol());
-            HttpHost proxy = (proxyURL != null) ? new HttpHost(proxyURL.getHost(), proxyURL.getPort(), proxyURL.getProtocol()) : null;
+                HttpHost target = new HttpHost(smsURL.getHost(), smsURL.getPort(), smsURL.getProtocol());
+                HttpHost proxy = (proxyURL != null) ? new HttpHost(proxyURL.getHost(), proxyURL.getPort(), proxyURL.getProtocol()) : null;
 
-            httpClient = HttpClients.custom()
-                    .setDefaultCredentialsProvider(credsProvider)
-                    .build();
+                httpClient = HttpClients.custom()
+                        .setDefaultCredentialsProvider(credsProvider)
+                        .build();
 
-            RequestConfig requestConfig;
+                RequestConfig requestConfig;
                 requestConfig = RequestConfig.custom()
                         .setProxy(proxy)
                         .build();
 
-            String httpMethod = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_SMS_METHOD);
-            String smsText = createMessage(code, mobileNumber, config);
-            if(httpMethod.equals(HttpMethod.GET)) {
+                String httpMethod = SMSAuthenticatorUtil.getConfigString(config, SMSAuthenticatorContstants.CONF_PRP_SMS_METHOD);
+                String smsText = createMessage(code, mobileNumber, config);
+                if (httpMethod.equals(HttpMethod.GET)) {
 
-                String path = getPath(mobileNumber, smsURL, smsText);
+                    String path = getPath(mobileNumber, smsURL, smsText);
 
-                HttpGet httpGet = new HttpGet(path);
-                httpGet.setConfig(requestConfig);
-                if(isNotEmpty(contentType)) {
-                    httpGet.addHeader("Content-type", contentType);
+                    HttpGet httpGet = new HttpGet(path);
+                    httpGet.setConfig(requestConfig);
+                    if (isNotEmpty(contentType)) {
+                        httpGet.addHeader("Content-type", contentType);
+                    }
+
+                    logger.debug("Executing request " + httpGet.getRequestLine() + " to " + target + " via " + proxy);
+
+                    CloseableHttpResponse response = httpClient.execute(target, httpGet);
+                    StatusLine sl = response.getStatusLine();
+                    response.close();
+                    if (sl.getStatusCode() != 200) {
+                        logger.error("SMS code for " + mobileNumber + " could not be sent: " + sl.getStatusCode() + " - " + sl.getReasonPhrase());
+                    }
+                    return sl.getStatusCode() == 200;
+
+                } else if (httpMethod.equals(HttpMethod.POST)) {
+
+                    String path = getPath(mobileNumber, smsURL, smsText);
+                    String uri = smsURL.getProtocol() + "://" + smsURL.getHost() + ":" + smsURL.getPort() + path;
+
+                    HttpPost httpPost = new HttpPost(uri);
+                    httpPost.setConfig(requestConfig);
+                    if (isNotEmpty(contentType)) {
+                        httpPost.addHeader("Content-type", contentType);
+                    }
+
+                    HttpEntity entity = new ByteArrayEntity(smsText.getBytes("UTF-8"));
+                    httpPost.setEntity(entity);
+
+                    CloseableHttpResponse response = httpClient.execute(httpPost);
+                    StatusLine sl = response.getStatusLine();
+                    response.close();
+                    if (sl.getStatusCode() != 200) {
+                        logger.error("SMS code for " + mobileNumber + " could not be sent: " + sl.getStatusCode() + " - " + sl.getReasonPhrase());
+                    }
+                    return sl.getStatusCode() == 200;
                 }
-
-                logger.debug("Executing request " + httpGet.getRequestLine() + " to " + target + " via " + proxy);
-
-                CloseableHttpResponse response = httpClient.execute(target, httpGet);
-                StatusLine sl = response.getStatusLine();
-                response.close();
-                if(sl.getStatusCode() != 200) {
-                    logger.error("SMS code for " + mobileNumber + " could not be sent: " + sl.getStatusCode() +  " - " + sl.getReasonPhrase());
-                }
-                return sl.getStatusCode() == 200;
-
-            } else if (httpMethod.equals(HttpMethod.POST)) {
-
-                String path = getPath(mobileNumber, smsURL, smsText);
-                String uri = smsURL.getProtocol() + "://" + smsURL.getHost() + ":" + smsURL.getPort() + path;
-
-                HttpPost httpPost = new HttpPost(uri);
-                httpPost.setConfig(requestConfig);
-                if(isNotEmpty(contentType)) {
-                    httpPost.addHeader("Content-type", contentType);
-                }
-
-                HttpEntity entity = new ByteArrayEntity(smsText.getBytes("UTF-8"));
-                httpPost.setEntity(entity);
-
-                CloseableHttpResponse response = httpClient.execute(httpPost);
-                StatusLine sl = response.getStatusLine();
-                response.close();
-                if(sl.getStatusCode() != 200) {
-                    logger.error("SMS code for " + mobileNumber + " could not be sent: " + sl.getStatusCode() +  " - " + sl.getReasonPhrase());
-                }
-                return sl.getStatusCode() == 200;
-            }
-            return true;
-        } catch (IOException e) {
-            logger.error(e);
-            return false;
-        } finally {
-            if(httpClient != null) {
-                try {
-                    httpClient.close();
-                } catch(IOException ignore) {
-                    // Ignore ...
+                return true;
+            } catch (IOException e) {
+                logger.error(e);
+                return false;
+            } finally {
+                if (httpClient != null) {
+                    try {
+                        httpClient.close();
+                    } catch (IOException ignore) {
+                        // Ignore ...
+                    }
                 }
             }
         }
+        return true;
     }
 
 

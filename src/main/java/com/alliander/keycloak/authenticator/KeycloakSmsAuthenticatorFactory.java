@@ -151,6 +151,14 @@ public class KeycloakSmsAuthenticatorFactory implements AuthenticatorFactory, Co
         property.setHelpText("");
         configProperties.add(property);
 
+
+        property = new ProviderConfigProperty();
+        property.setName(SMSAuthenticatorContstants.MOCK);
+        property.setLabel("MOCK");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setHelpText("If Selected sms wil not send");
+        configProperties.add(property);
+
     }
 
     public String getId() {
