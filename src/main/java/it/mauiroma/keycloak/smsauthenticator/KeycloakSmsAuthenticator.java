@@ -1,8 +1,8 @@
-package com.alliander.keycloak.authenticator;
+package it.mauiroma.keycloak.smsauthenticator;
 
-import com.alliander.keycloak.authenticator.gateway.GatewayFactory;
-import com.alliander.keycloak.authenticator.gateway.SMS;
-import com.alliander.keycloak.authenticator.gateway.SMSGateway;
+import it.mauiroma.keycloak.smsauthenticator.gateway.GatewayFactory;
+import it.mauiroma.keycloak.smsauthenticator.gateway.SMS;
+import it.mauiroma.keycloak.smsauthenticator.gateway.SMSGateway;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;

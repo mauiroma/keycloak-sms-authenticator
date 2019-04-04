@@ -1,6 +1,6 @@
-package com.alliander.keycloak.authenticator;
+package it.mauiroma.keycloak.smsauthenticator;
 
-import com.alliander.keycloak.authenticator.gateway.Gateways;
+import it.mauiroma.keycloak.smsauthenticator.gateway.Gateways;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;

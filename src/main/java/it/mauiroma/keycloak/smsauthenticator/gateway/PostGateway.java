@@ -1,4 +1,4 @@
-package com.alliander.keycloak.authenticator.gateway;
+package it.mauiroma.keycloak.smsauthenticator.gateway;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

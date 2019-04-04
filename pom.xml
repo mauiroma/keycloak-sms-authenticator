@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.alliander.keycloak</groupId>
+    <groupId>it.mauiroma.keycloak</groupId>
     <artifactId>keycloak-sms-authenticator</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
@@ -12,7 +12,6 @@
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <keycloak.version>3.4.3.Final</keycloak.version>
         <version.keycloak>4.8.3.Final</version.keycloak>
         <version.eap>7.2.0.GA</version.eap>
     </properties>

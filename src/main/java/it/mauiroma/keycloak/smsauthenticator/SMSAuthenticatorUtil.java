@@ -1,4 +1,4 @@
-package com.alliander.keycloak.authenticator;
+package it.mauiroma.keycloak.smsauthenticator;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
