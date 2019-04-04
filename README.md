@@ -1,6 +1,6 @@
 # keycloak-sms-authenticator
 
-Based on Keycloak Keycloak 4.8.3.Final (RH-SSO 7.3.0.GA) 
+Based on Keycloak 4.8.3.Final (RH-SSO 7.3.0.GA) 
 
 To install the SMS Authenticator one has to:
 

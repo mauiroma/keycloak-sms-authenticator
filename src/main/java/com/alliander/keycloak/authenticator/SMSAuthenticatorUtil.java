@@ -2,6 +2,7 @@ package com.alliander.keycloak.authenticator;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.UserModel;
@@ -26,18 +27,29 @@ public class SMSAuthenticatorUtil {
     }
 
 
+    public static void putCredentialValue(AuthenticationFlowContext context, String credentialName, String credentialValue){
+        List<CredentialModel> creds = context.getSession().userCredentialManager().getStoredCredentialsByType(context.getRealm(), context.getUser(), credentialName);
+        if (creds.isEmpty()) {
+            CredentialModel secret = new CredentialModel();
+            secret.setType(credentialName);
+            secret.setValue(credentialValue);
+            secret.setCreatedDate(Time.currentTimeMillis());
+            context.getSession().userCredentialManager().createCredential(context.getRealm(), context.getUser(), secret);
+        } else {
+            creds.get(0).setValue(credentialValue);
+            context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), creds.get(0));
+        }
+
+    }
+
     public static String getCredentialValue(AuthenticationFlowContext context, String credentialName) {
         String result = null;
-
         List codeCreds = context.getSession().userCredentialManager().getStoredCredentialsByType(context.getRealm(), context.getUser(), credentialName);
-
-        CredentialModel expectedCode = (CredentialModel) codeCreds.get(0);
-        logger.debug("Expected code = " + expectedCode);
-
-        if (expectedCode != null) {
-            result = expectedCode.getValue();
+        CredentialModel credentialCode = (CredentialModel) codeCreds.get(0);
+        if (credentialCode != null) {
+            result = credentialCode.getValue();
         }
-        logger.debug("result : " + result);
+        logger.trace("CredentialName ["+credentialName+"] value ["+result+"]");
         return result;
     }
 
@@ -97,6 +109,4 @@ public class SMSAuthenticatorUtil {
         }
         return value;
     }
-
-
 }
